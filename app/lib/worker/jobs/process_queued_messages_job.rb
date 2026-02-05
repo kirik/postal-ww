@@ -22,11 +22,18 @@ module Worker
       #
       # @return [Array<Integer>]
       def find_ip_addresses
+        allowed_ip = ENV['IP_FILTER']
+
         ip_addresses = { 4 => [], 6 => [] }
         Socket.ip_address_list.each do |address|
           next if local_ip?(address.ip_address)
 
+          if allowed_ip && !allowed_ip.empty?
+            next unless address.ip_address == allowed_ip
+          end
+
           ip_addresses[address.ipv4? ? 4 : 6] << address.ip_address
+          Postal.logger.info "Using IPv#{address.ipv4? ? '4' : '6'} address: #{address.ip_address}"
         end
         @ip_addresses = IPAddress.where(ipv4: ip_addresses[4]).or(IPAddress.where(ipv6: ip_addresses[6])).pluck(:id)
       end
