@@ -22,14 +22,14 @@ module Worker
       #
       # @return [Array<Integer>]
       def find_ip_addresses
-        allowed_ip = ENV['IP_FILTER']
+        allowed_ips = ENV['IP_FILTER']&.split(',')&.map(&:strip) || []
 
         ip_addresses = { 4 => [], 6 => [] }
         Socket.ip_address_list.each do |address|
           next if local_ip?(address.ip_address)
 
-          if allowed_ip && !allowed_ip.empty?
-            next unless address.ip_address == allowed_ip
+          if allowed_ips.any?
+            next unless allowed_ips.include?(address.ip_address)
           end
 
           ip_addresses[address.ipv4? ? 4 : 6] << address.ip_address
